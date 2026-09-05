@@ -20,7 +20,7 @@ requires-python = ">=3.9"
 dependencies = []
 
 [project.scripts]
-distributed component-blackboard-bus = "blackboard_bus.cli:main"
+blackboard-bus = "blackboard_bus.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/abusuraihsakhri/distributed component-blackboard-bus"

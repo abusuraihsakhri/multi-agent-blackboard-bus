@@ -63,3 +63,65 @@ def test_supervisor_consensus_and_audit():
     assert main(["audit", "--task-id", "CLI-TEST-01"]) == 0
     assert main(["chat", "Explain", "specifications"]) == 0
     assert main(["verify-audit"]) == 0
+
+
+def test_phi_redaction():
+    """PHI guard should redact sensitive patterns instead of only raising."""
+    redacted = PHIGuard.redact_phi("Contact patient at 555-123-4567 or MRN-12345")
+    assert "555-123-4567" not in redacted
+    assert "MRN-12345" not in redacted
+    assert "[REDACTED_IDENTIFIER]" in redacted
+
+
+def test_audit_integrity_tamper_detection():
+    """Audit trail should detect tampered entries."""
+    from agents.base import AuditTrail
+    trail = AuditTrail(secret_key="test-key-for-integrity")
+    trail.log("test-actor", "test-tier", "TEST_EVENT", {"data": "original"})
+    trail.log("test-actor", "test-tier", "TEST_EVENT_2", {"data": "second"})
+
+    # Integrity should pass for unmodified trail
+    assert trail.verify_integrity() is True
+
+    # Tamper with an entry
+    trail.logs[0]["payload_hash"] = "tampered_hash"
+    assert trail.verify_integrity() is False
+
+
+def test_supervisor_critical_escalation():
+    """Supervisor should escalate to CRITICAL_STAT when safety worker triggers."""
+    supervisor = SystemSupervisor(model_provider="mock")
+    payload = SystemTaskPayload(
+        task_id="CRITICAL-01",
+        target_identifier="KEY-CRIT",
+        primary_metric=10.0,
+        secondary_metric=5.0,
+        status_descriptor="NOMINAL",
+        is_critical_flag=True,
+    )
+    dossier = supervisor.process_task(payload)
+    assert dossier.overall_urgency == UrgencyLevel.CRITICAL_STAT
+    assert dossier.integrity_status == SystemIntegrityStatus.RECALIBRATION_REQUIRED
+    assert dossier.critical_alerts_count > 0
+
+
+def test_llm_factory_providers():
+    """LLM factory should handle all provider types without error."""
+    from agents.llm_factory import LLMFactory
+    for provider in ["mock", "deterministic", "test", "ollama", "local", "claude", "anthropic", "openai", "gpt4", "unknown"]:
+        llm = LLMFactory.create(provider)
+        result = llm.invoke("Test prompt")
+        assert isinstance(result, str)
+        assert len(result) > 0
+
+
+def test_phi_guard_email_pattern():
+    """PHI guard should catch email addresses."""
+    with pytest.raises(SecurityException):
+        PHIGuard.assert_no_phi("Send report to doctor@hospital.org")
+
+
+def test_phi_guard_dob_pattern():
+    """PHI guard should catch date of birth patterns."""
+    with pytest.raises(SecurityException):
+        PHIGuard.assert_no_phi("Patient DOB 01/15/1985")
