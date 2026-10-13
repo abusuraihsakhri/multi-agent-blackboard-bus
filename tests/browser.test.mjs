@@ -1,5 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { evaluateTask } from "../web/app.mjs";
 
 const sample = { task_id: "T1", target_identifier: "KEY", primary_metric: 10,
@@ -27,4 +31,13 @@ test("critical flag escalates regardless of measurements", () => {
 test("rejects invalid inputs", () => {
   assert.throws(() => evaluateTask({ ...sample, primary_metric: Infinity }), /finite/);
   assert.throws(() => evaluateTask({ ...sample, task_id: "" }), /required/);
+});
+
+test("HTML module script parses without JavaScript syntax errors", () => {
+  const html = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../web/index.html"), "utf8");
+  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
+  assert.ok(match, "expected an inline JavaScript module");
+  const syntax = spawnSync(process.execPath, ["--input-type=module", "--check"],
+    { input: match[1], encoding: "utf8" });
+  assert.equal(syntax.status, 0, syntax.stderr);
 });
