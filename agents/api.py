@@ -15,7 +15,7 @@ supervisor = SystemSupervisor(model_provider="mock")
 app = FastAPI(
     title="Multi Agent Blackboard Bus API",
     description="Enterprise Distributed Component Platform (Long-Horizon Agent Context & State Architecture)",
-    version="3.0.0-ENTERPRISE",
+    version="2.0.1",
 )
 
 
@@ -25,7 +25,7 @@ class ChatRequest(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "HEALTHY", "service": "distributed component-blackboard-bus", "domain": "Long-Horizon Agent Context & State Architecture", "standard": "Autonomous Agent State Machine & Token Economy RFC", "version": "3.0.0-ENTERPRISE"}
+    return {"status": "HEALTHY", "service": "distributed component-blackboard-bus", "domain": "Long-Horizon Agent Context & State Architecture", "standard": "Autonomous Agent State Machine & Token Economy RFC", "version": "2.0.1"}
 
 
 @app.get("/metrics")
