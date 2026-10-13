@@ -6,7 +6,7 @@ import uuid
 import json
 import time
 from typing import Dict, Any, List, Optional
-from .base import AuditLogger, PHIGuard
+from .base import AuditLogger, PHIGuard, SecurityException
 from .models import SystemTaskPayload, AgentAlert, ConsensusDossier, UrgencyLevel, SystemIntegrityStatus
 from .workers import InvariantQCWorker, SafetyEscalationWorker, ProtocolConformanceWorker
 from .llm_factory import LLMFactory
@@ -25,10 +25,14 @@ class SystemSupervisor:
 
     def process_task(self, payload: SystemTaskPayload, actor: str = "SystemSupervisor") -> ConsensusDossier:
         # Zero-PHI outbound validation
-        PHIGuard.assert_no_phi(payload.task_id)
-        PHIGuard.assert_no_phi(payload.target_identifier)
-        PHIGuard.assert_no_phi(payload.status_descriptor)
-        PHIGuard.assert_no_phi(json.dumps(payload.attributes, ensure_ascii=False, default=str))
+        try:
+            PHIGuard.assert_no_phi(payload.task_id)
+            PHIGuard.assert_no_phi(payload.target_identifier)
+            PHIGuard.assert_no_phi(payload.status_descriptor)
+            PHIGuard.assert_no_phi(json.dumps(payload.attributes, ensure_ascii=False, default=str))
+        except SecurityException:
+            GLOBAL_METRICS.record_phi_block()
+            raise
         started = time.perf_counter()
 
         # Multi-worker evaluations
