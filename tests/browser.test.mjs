@@ -35,9 +35,11 @@ test("rejects invalid inputs", () => {
 
 test("HTML module script parses without JavaScript syntax errors", () => {
   const html = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../web/index.html"), "utf8");
-  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
-  assert.ok(match, "expected an inline JavaScript module");
+  const tag = '<script type="module">';
+  const start = html.indexOf(tag);
+  const end = html.indexOf("</script>", start);
+  assert.ok(start !== -1 && end > start, "expected an inline JavaScript module");
   const syntax = spawnSync(process.execPath, ["--input-type=module", "--check"],
-    { input: match[1], encoding: "utf8" });
+    { input: html.slice(start + tag.length, end), encoding: "utf8" });
   assert.equal(syntax.status, 0, syntax.stderr);
 });
