@@ -31,3 +31,10 @@ jobs:
           path: web
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Smoke-check deployed page and module
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          test -n "$PAGE_URL"
+          curl -fsSL --retry 5 --retry-delay 3 "${PAGE_URL%/}/" | grep -q "Multi-Agent Blackboard Bus"
+          curl -fsSL --retry 5 --retry-delay 3 "${PAGE_URL%/}/app.mjs" | grep -q "evaluateTask"
