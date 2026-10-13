@@ -1,7 +1,3 @@
-"""
-Multi Agent Blackboard Bus — Enterprise Automated Analytical Suite.
-Domain: Long-Horizon Agent Context & State Architecture
-Standard: Autonomous Agent State Machine & Token Economy RFC
+"""Three-worker deterministic supervisor and in-memory audit implementation."""
 
-"""
-__version__ = "3.0.0-ENTERPRISE"
+__version__ = "2.0.1"
