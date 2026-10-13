@@ -1,27 +1,35 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "distributed component-blackboard-bus"
-version = "2.0.0"
-description = "BlackboardBus: Asynchronous Distributed Component Publish-Subscribe Shared Memory Bus"
+name = "multi-agent-blackboard-bus"
+version = "2.0.1"
+description = "Deterministic multi-agent task evaluation with an in-memory audit trail"
 readme = "README.md"
 authors = [{ name = "Dr. Abu Suraih Sakhri", email = "abusuraih@example.com" }]
-license = { text = "MIT" }
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Topic :: Security/Cryptography",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.9"
-dependencies = []
+requires-python = ">=3.10"
+dependencies = ["pydantic>=2.4,<3"]
+
+[project.optional-dependencies]
+server = ["fastapi>=0.110,<1", "uvicorn>=0.29,<1"]
+test = ["pytest>=8,<10", "httpx>=0.27,<1"]
 
 [project.scripts]
-blackboard-bus = "blackboard_bus.cli:main"
+blackboard-bus = "cli:main"
 
 [project.urls]
-Homepage = "https://github.com/abusuraihsakhri/distributed component-blackboard-bus"
-Repository = "https://github.com/abusuraihsakhri/distributed component-blackboard-bus.git"
+Homepage = "https://github.com/abusuraihsakhri/multi-agent-blackboard-bus"
+Repository = "https://github.com/abusuraihsakhri/multi-agent-blackboard-bus"
+
+[tool.setuptools]
+py-modules = ["cli", "enrichment", "simulator"]
+
+[tool.setuptools.packages.find]
+include = ["agents*", "blackboard_bus*"]

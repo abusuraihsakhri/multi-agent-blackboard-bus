@@ -1,165 +1,93 @@
-# Multi Agent Blackboard Bus
+# Multi-Agent Blackboard Bus
 
-> **Domain:** Autonomous Agent Systems & Context State Architecture  
-> **Reference Guidelines & Standards:** `Distributed Systems RFC & State Machine Verification`
+A deterministic Python demonstration of task evaluation by three specialized workers, with a supervisor that aggregates alerts into a consensus dossier. The project also retains a separate, earlier `blackboard_bus` coordinator and CLI.
 
-<div align="center">
+## What works
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+- **Supervisor:** Checks primary metric > 25, secondary metric > 12 or an explicit critical flag, and anomalous status keywords.
+- **Result dossier:** Returns worker alerts, urgency, integrity status, and an audit entry hash.
+- **Audit trail:** HMAC-SHA256-linked records held in process memory. Set `AUDIT_SECRET_KEY` to reuse a signing key across launches; records themselves are **not persisted**.
+- **Identifier screening:** Pattern-based checks for selected identifiers in task fields, attributes, chat text, and audit metadata. This is not comprehensive de-identification or a HIPAA compliance guarantee.
+- **Interfaces:** Python CLI, CSV batch processing, FastAPI REST service, and a standalone browser demo.
+- **Legacy coordinator:** `blackboard_bus` exposes a separate threshold-based worker system; it remains available for compatibility.
 
-</div>
+The `mock` LLM is deterministic and does not call an external service. The other names accepted by `LLMFactory` currently resolve to the same mock implementation. The enrichment modules are threshold-based demonstrations rather than full event sourcing, queueing, or state restoration engines.
 
----
+## Browser demo
 
-## 📖 What It Does
-
-**Multi Agent Blackboard Bus** is an advanced analytical and computational platform implementing Hearsay-II asynchronous publish-subscribe shared memory bus for multi-agent swarms. It coordinates multiple specialized worker agents that independently evaluate tasks, detect anomalies, and reach consensus through a supervisor orchestrator.
-
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-- **Multi-Agent Coordination**: Supervisor orchestrator with specialized worker agents (Invariant QC, Safety Escalation, Protocol Conformance)
-- **Consensus Dossier Generation**: Aggregated multi-worker evaluations with urgency classification
-- **Zero-PHI Outbound Guard**: Active regex inspection blocking SSNs, MRNs, phone numbers, emails, and patient identifiers
-- **Tamper-Evident HMAC-SHA256 Audit Trail**: Chained, cryptographically signed logs with integrity verification
-- **FastAPI REST API**: OpenAPI-compatible REST endpoints for audit, chat, and metrics
-- **Prometheus Telemetry**: Operational metrics exporter for monitoring
-- **LLM Integration**: Pluggable inference engine supporting mock, Ollama, Claude, and OpenAI providers
-- **Bayesian Calibration**: Active learning engine for worker reliability weight tracking
-
----
-
-## 💻 CLI Quickstart & Usage
-
-### Installation
-```bash
-pip install -e .
-```
-
-### 1. Run Single Task Evaluation
-```bash
-python cli.py audit --task-id TASK-001 --target KEY-01 --primary 28.5 --secondary 14.2 --critical --status DISCORDANT
-```
-
-### 2. Interactive Chat Query
-```bash
-python cli.py chat "What is the system status?"
-```
-
-### 3. Batch Process CSV Records
-```bash
-python cli.py batch -i sample.csv -o results.csv
-```
-
-### 4. Verify Audit Trail Integrity
-```bash
-python cli.py verify-audit
-```
-
-### 5. Launch REST API Server
-```bash
-python cli.py serve --host 127.0.0.1 --port 8000
-```
-
-### Parameter Reference
-- `--task-id`: Unique task identifier (default: TASK-2026-001)
-- `--target`: Target entity identifier (default: KEY-TARGET-01)
-- `--primary`: Primary metric value, float (default: 28.5)
-- `--secondary`: Secondary metric value, float (default: 14.2)
-- `--critical`: Flag for critical escalation (default: False)
-- `--status`: Status descriptor string (default: DISCORDANT)
-
----
-
-## 🛡️ Security Architecture
-
-* **Zero-PHI Outbound Interceptor:** Active regex inspection blocking SSNs, MRNs, phone numbers, emails, DOB patterns, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition. Integrity verification recomputes and validates every signature in the chain.
-* **Secure Key Management:** Audit signing key sourced from `AUDIT_SECRET_KEY` environment variable. A secure random key is generated if not set (with a runtime warning).
-
-### Environment Variables
-| Variable | Description | Required |
-|:---------|:------------|:---------|
-| `AUDIT_SECRET_KEY` | HMAC signing key for audit trail integrity | Recommended |
-
----
-
-## 🧪 Testing & Verification
-
-Run the automated test suite:
+The `web/` directory contains a static JavaScript version of the three supervisor rules. It needs no API, Python runtime, or credentials. To run locally:
 
 ```bash
-pytest -v
+python -m http.server 8080 --directory web
 ```
 
-Run with coverage:
+Open `http://127.0.0.1:8080/`, enter measurements, select **Evaluate task**, and optionally export the result as JSON. The page does not make network requests or store the entered data. It has **no cryptographic audit trail** and is not a substitute for the Python service. A GitHub Pages deployment workflow is included; site availability depends on the repository's Pages settings.
+
+## Python installation
+
+Requires Python 3.10 or newer.
 
 ```bash
-pytest -v --cov=agents --cov=blackboard_bus
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[server,test]"
+pytest -q
 ```
 
-Execute high-throughput batch simulation benchmarks:
+Use the installed CLI:
 
 ```bash
-python simulator.py 1000
+blackboard-bus audit --task-id TASK-001 --target KEY-01 --primary 28.5 --secondary 14.2 --critical --status DISCORDANT
+blackboard-bus batch -i sample.csv -o results.csv
+blackboard-bus chat "What is the system status?"
+blackboard-bus verify-audit
 ```
 
----
+CSV `is_critical_flag` accepts `true/false`, `1/0`, or `yes/no` (case-insensitive). Invalid values cause an error rather than silently changing escalation decisions.
 
-## 🐳 Container Deployment
+The legacy implementation can still be run using `python -m blackboard_bus.cli audit`.
+
+## REST service
+
+Start the primary FastAPI application:
 
 ```bash
-docker build -t multi-agent-blackboard-bus .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key multi-agent-blackboard-bus
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+blackboard-bus serve --host 127.0.0.1 --port 8000
 ```
 
-Or using Docker Compose:
+- `GET /health`: service status
+- `POST /api/audit`: evaluate a `SystemTaskPayload`
+- `POST /api/chat`: deterministic mock answer
+- `GET /api/audit/logs`: in-memory audit entries and chain check
+- `GET /metrics`: JSON task/audit counters
+- `GET /metrics/prometheus`: Prometheus text counters
+
+The API has **no built-in authentication**. Bind it to loopback or place it behind authenticated access control before exposing it on a network. Do not send real patient information to these demonstration endpoints. Audit signatures authenticate entries in memory but cannot establish completeness after log deletion or process restart.
+
+## Docker
 
 ```bash
-docker-compose up
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+docker compose up --build
 ```
 
----
+Compose publishes the service on `127.0.0.1:8000` only. The key must be set by the operator and is not checked into the repository.
 
-## 📁 Project Structure
+## Testing
 
-```
-├── agents/                  # Core multi-agent system
-│   ├── __init__.py
-│   ├── api.py               # FastAPI REST server
-│   ├── base.py              # Security, PHI guard, audit trail
-│   ├── learning.py          # Bayesian calibration engine
-│   ├── llm_factory.py       # LLM provider factory
-│   ├── metrics.py           # Prometheus metrics collector
-│   ├── models.py            # Pydantic data models
-│   ├── streamer.py          # WebSocket telemetry broadcaster
-│   ├── supervisor.py        # Master orchestrator
-│   └── workers.py           # Specialized worker agents
-├── blackboard_bus/          # Blackboard bus core engine
-│   ├── __init__.py
-│   ├── agents.py            # Sub-agents and coordinator
-│   ├── cli.py               # CLI interface
-│   ├── engine.py            # Domain engine
-│   ├── models.py            # Data models
-│   └── server.py            # FastAPI server factory
-├── tests/                   # Test suite
-├── cli.py                   # Top-level CLI entry point
-├── simulator.py             # Simulation benchmark
-├── enrichment.py            # Enrichment feature engines
-├── sample.csv               # Sample batch input
-├── sample_payload.json      # Sample API payload
-├── pyproject.toml           # Project configuration
-└── Dockerfile               # Container definition
+```bash
+pytest -q
+node --test tests/browser.test.mjs  # Node.js 22
+python -m build                      # after installing build
 ```
 
----
+GitHub Actions checks Python 3.10–3.12, builds the distribution, runs Python and browser tests, and audits installed dependencies.
 
-## 📄 License
+## Technology and privacy
 
-This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+Python, Pydantic 2, optional FastAPI/Uvicorn, standard-library HMAC/hashlib, and dependency-free JavaScript. The browser demo works in current modern browsers supporting ES modules and Blob downloads. Python APIs operate in process memory; no database or cross-session audit storage is configured. The browser demo is local-only and makes no background network requests.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
