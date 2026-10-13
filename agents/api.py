@@ -33,6 +33,7 @@ def metrics():
     return {
         "dossiers_processed_total": len(supervisor.dossier_registry),
         "audit_blocks_total": len(AuditLogger.get_trail()),
+        "phi_blocks_total": GLOBAL_METRICS.phi_blocks_total,
         "system_status": "NOMINAL_OPTIMAL"
     }
 
