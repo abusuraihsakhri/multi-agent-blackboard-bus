@@ -35,5 +35,11 @@ jobs:
         run: |
           blackboard-bus --help
           python -m build
+      - name: Set up Node.js for browser rule tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test browser demo rules
+        run: node --test tests/browser.test.mjs
       - name: Audit installed dependencies
         run: pip-audit --progress-spinner off
